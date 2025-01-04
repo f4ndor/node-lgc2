@@ -14,6 +14,7 @@ const WebSocketClient = require('websocket');
 const ppath = require('persist-path');
 const mkdirp = require('mkdirp');
 const PairingJson = require('./pairing.js');
+const { cwd } = require('process');
 
 class SpecializedSocket {
   constructor(ws) {
@@ -182,14 +183,21 @@ class LGTV extends EventEmitter{
       that.send('register', undefined, pairing, function (err, res) {
         if (!err && res) {
           if (res['client-key']) {
-            that.emit('connect');
-            that.connection = true;
-            that.saveKey(res['client-key'], function (err) {
-              if (err) {
-                that.emit('error', err);
-              }
-            });
-            isPaired = true;
+            if(res['client-key'] !== that.clientKey){
+              that.saveKey(res['client-key'], function (err) {
+                if (err) {
+                  that.emit('error', err);
+                }else{
+                  isPaired = true;
+                  that.emit('connect');
+                  that.connection = true;
+                }
+              });
+            }else{
+              isPaired = true;
+              that.emit('connect');
+              that.connection = true;
+            }
           } else {
             that.emit('prompt');
           }
